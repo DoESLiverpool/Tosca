@@ -13,10 +13,24 @@ Pin mapping is in the .hal file.
 
 If you ground pin P9-11, that disables the e-stop.
 
-On the Beaglebone the pin-outs are as follows:
+log on with
+ssh -X machinekit@192.168.7.2 pw: machinekit
+cd machinekit
+. scripts/rip-environment
+machinekit mk7_bbb_pcb.ini
 
- * P9-11 - the e-stop (ground it)
+You can see the signals if you do machine -> show hal configuration
+
+On the Beaglebone the pin-outs are as follows:
+https://graycat.io/wp-content/uploads/2012/12/beaglebone_pinout.png
+
+according to mk7_bbb_pcb.hal:
+ * P9-11 - estop connect to Ground
+ * P9-13 - limit switch connect to Ground 3 times during the homing cycle (before you can load an G-code)
+ * P9-15 - probe-in (connect to ground to show it light up)
+  
  * P9-29 - step (axis 0)
  * P9-31 - direction (axis 0)
- * P9-13 - home (pull high to **3.3V**, we think)
+ * P9-28 - direction (axis 1)
+ * P9-30 - step (axis 1)
 
