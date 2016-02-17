@@ -34,3 +34,7 @@ according to mk7_bbb_pcb.hal:
  * P9-28 - direction (axis 1)
  * P9-30 - step (axis 1)
 
+It should then be able to execute G-code.  Set the 0 position with 
+  g92x0y0
+trivial kinematics on the hal configuration table with 
+  setp kins-btrivial 1
