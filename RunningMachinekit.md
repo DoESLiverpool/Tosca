@@ -34,7 +34,9 @@ This assumes you've already got a Beaglebone with Machinekit installed, but can 
   1. In the HAL Configuration window switch to the WATCH tab.
   1. Find the "all-home" and "probe-in" signals in the tree on the left and double(?)-click them to add them to the WATCH list
   1. Test the signals.  Try connecting the wire which is connected into one of the ground pins on the Beaglebone into each of the limit switch (P9-13) and probe-in (P9-15) pins on the Beaglebone.  When you connect it to one of the pins the corresponding signal in the WATCH list should turn yellow.
+
   > Check the [Beaglebone pinouts diagram](https://graycat.io/wp-content/uploads/2012/12/beaglebone_pinout.png) to find where those pins are.
+
   1. If the signals are okay, we can proceed to home the machine.
   1. Enable the machine - click on the second(?) icon from the left on the toolbar.
   1. Set the feedrate really slow so it doesn't move much while you're homing it - around 10%
