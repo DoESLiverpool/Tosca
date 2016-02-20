@@ -27,9 +27,9 @@ This assumes you've already got a Beaglebone with Machinekit installed, but can 
   1. Open the HAL Configuration view - from the menu "Machine" -> "Show HAL Configuration"
   1. Find the trivial kinematics in the tree on the left
   1. Type in the command to set it FIXME Check exactly where you type this
-```
-      setp kins-btrivial 1
-```
+  ```
+  setp kins-btrivial 1
+  ```
 1. ~~Home the machine~~ (that requirement has been removed for now)
   1. In the HAL Configuration window switch to the WATCH tab.
   1. Find the "all-home" and "probe-in" signals in the tree on the left and double(?)-click them to add them to the WATCH list
@@ -49,9 +49,9 @@ g92x0y0
 
 1. Load a Gcode file, with "File" -> "Open"
 1. [Optional] Manually jog to a starting point and set it as home with
-```
-g92x0y0
-```
+  ```
+  g92x0y0
+  ```
 1. Click the play icon.
 
 
