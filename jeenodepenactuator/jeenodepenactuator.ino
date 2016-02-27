@@ -6,9 +6,11 @@
 // (then divided by 4 to be the midpoint of the actuator).
 
 #include <JeeLib.h>
+#include <Servo.h>
 
 #define P(X) Serial.print(X)
 #define PH(X) Serial.print(X, HEX)
+Servo penservo; 
 
 const byte network = 212; // network group (can be in the range 1-255).
 const byte myNodeID = 3; // unique node ID of receiver (1 through 30)
@@ -23,32 +25,49 @@ int actuatorpin = 5;
 int initialposition; 
 bool binitialpositionset = false; 
 
-void setup() 
-{
-    Serial.begin(9600);
-    //pinMode(3, INPUT); 
-    //pinMode(5, INPUT); 
-    rf12_initialize(myNodeID, freq, network); // Initialize RFM12
-    pinMode(ledpin, OUTPUT); 
-    pinMode(actuatorpin, OUTPUT); 
+long servolo = 30; 
+long servohi = 120; 
 
+long zlo = -100; 
+long zhi = 100; 
+
+void initialcycle(bool bshowactuate) 
+{
+    // initial flow through two cycles to see it move
     for (int i = 0; i < 2; i++) {
         P("actuate "); 
         P(i); 
         P("\n"); 
-        for (int j = 0; j <= 255; j++) {
-            analogWrite(actuatorpin, j); 
-            delay(3); 
+        for (int j = 50; j <= 200; j++) {
+            if (bshowactuate)
+                penservo.write(map(j, 50, 200, servolo, servohi)); 
+            delay(5); 
+            digitalWrite(ledpin, (((j/10) % 2) == 1 ? HIGH : LOW)); 
         }
-        for (int j = 255; j >= 0; j--) {
-            analogWrite(actuatorpin, j); 
-            delay(3); 
+        for (int j = 200; j >= 50; j--) {
+            if (bshowactuate)
+                penservo.write(map(j, 50, 200, servolo, servohi)); 
+            delay(5); 
+            digitalWrite(ledpin, (((j/10) % 2) == 1 ? HIGH : LOW)); 
         }
     }
+    binitialpositionset = false; 
 }
 
-int zpos = 0; 
-int prevzpos; 
+
+void setup() 
+{
+    Serial.begin(9600);
+    rf12_initialize(myNodeID, freq, network); // Initialize RFM12
+    pinMode(ledpin, OUTPUT); 
+    penservo.attach(actuatorpin); 
+    
+    //while (true) 
+    initialcycle(true); 
+}
+
+long zpos = 0; 
+long prevzpos; 
 int ncount = 0; 
 long livecount = 1000; 
 int ledtoggle; 
@@ -56,23 +75,31 @@ void loop()
 {
     if (rf12_recvDone() && (rf12_crc == 0) && ((rf12_hdr & RF12_HDR_CTL) == 0)) {
         int *payload = (int*)rf12_data; // access rf12 data buffer as an arrya of ints
+
+        // reset zero position 
+        // (could use this to set the top and bottom range from a distance)
+        if (payload[1] == -998) 
+            initialcycle(true); 
+        else if (payload[1] == -999) 
+            initialcycle(false); 
+
         zpos = payload[0]; 
         if (!binitialpositionset) {
             initialposition = zpos; 
+            zlo = initialposition - 100; 
+            zhi = initialposition + 100; 
             binitialpositionset = true; 
         }
         
-        
         digitalWrite(ledpin, ((++ledtoggle) % 2 ? HIGH : LOW)); 
-        
-        int acval = min(max(0, (zpos - initialposition)+500), 1000); 
-        analogWrite(actuatorpin, acval/4); 
-
+        int servopos = map(constrain(zpos, zlo, zhi), zlo, zhi, servolo, servohi); 
+        penservo.write(servopos); 
+ 
         P(zpos);
         P(" ");
         P(payload[1]); 
         P(" ");
-        P(acval); 
+        P(servopos); 
         P("\n");
         livecount = 200000; 
     } else {

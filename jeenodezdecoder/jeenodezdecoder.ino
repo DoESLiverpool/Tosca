@@ -14,23 +14,25 @@ const byte myNodeID = 3; // unique node ID of receiver (1 through 30)
 const byte freq = RF12_433MHZ; // Match freq to module
 const byte RF12_NORMAL_SENDWAIT = 0;
 
+int ledpin = 6; 
 const int payloadCount = 2; // the number of integers in the payload message
 int payload[payloadCount];
-
+int pinstep = 3; // irq1
+int pindirection = 5;   // check PIND value below
 void setup() 
 {
     Serial.begin(9600);
-    pinMode(3, INPUT); 
-    pinMode(5, INPUT); 
+    pinMode(pinstep, INPUT); 
+    pinMode(pindirection, INPUT); 
     attachInterrupt(1, incz, RISING);
     rf12_initialize(myNodeID, freq, network); // Initialize RFM12
-    pinMode(6, OUTPUT); 
+    pinMode(ledpin, OUTPUT); 
 }
 
 int zpos = 0; 
 void incz() 
 {
-    if (PIND & 0x20)
+    if (PIND & 0x20)  // pindirection==5!
         zpos++; 
     else
         zpos--; 
@@ -48,13 +50,18 @@ void loop()
         prevzpos = zpos; 
         payload[0] = prevzpos; 
         payload[1] = ncount++; 
+
+        // special cases
+        if ((payload[1] == 999) || (payload[1] == -998))
+            payload[1] = 0; 
+           
         rf12_sendStart(1, payload, payloadCount*sizeof(int));
         rf12_sendWait(RF12_NORMAL_SENDWAIT); // wait for send completion
         npingcount = 100000;
         P("Z"); 
         P(prevzpos); 
         P("\n"); 
-        digitalWrite(6, ((++ledtoggle) % 2 ? HIGH : LOW));         
+        digitalWrite(ledpin, ((++ledtoggle) % 2 ? HIGH : LOW));         
         delay(50);
     }
 }
