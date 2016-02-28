@@ -29,7 +29,7 @@ void setup()
     pinMode(ledpin, OUTPUT); 
 }
 
-int zpos = 0; 
+volatile int zpos = 0; 
 void incz() 
 {
     if (PIND & 0x20)  // pindirection==5!
