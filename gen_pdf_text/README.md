@@ -2,19 +2,19 @@
 
 Using [pandoc](http://pandoc.org/) to generate an output pdf for further conversion to svg, use:
 
-pandoc --to=beamer --template=template.tex --output=output.pdf test.md
+`pandoc --to=beamer --template=template.tex --output=output.pdf test.md`
 
 or:
 
-pandoc --to=beamer --template=template.tex --output=output.pdf < test.md
+`pandoc --to=beamer --template=template.tex --output=output.pdf < test.md`
 
 or:
 
-echo test.md | pandoc --to=beamer --template=template.tex --output=output.pdf
+`echo test.md | pandoc --to=beamer --template=template.tex --output=output.pdf`
 
 Alternatively, any required text can be piped from echo:
 
-echo "This is a test" | pandoc --to=beamer --template=template.tex --output=output.pdf
+`echo "This is a test" | pandoc --to=beamer --template=template.tex --output=output.pdf`
 
 ## Template
 
