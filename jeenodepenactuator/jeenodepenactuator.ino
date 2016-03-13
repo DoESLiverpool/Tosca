@@ -5,21 +5,41 @@
 // Z value to come from the other jeenode is scaled to be at 500, 
 // (then divided by 4 to be the midpoint of the actuator).
 
-#include <JeeLib.h>
+#include <XBee.h>
 #include <Servo.h>
 
-#define P(X) Serial.print(X)
-#define PH(X) Serial.print(X, HEX)
+// If you're using a Mega, you can use different hardware serial ports for both the XBee and the logging.
+// In that case (unless you're using an XBee shield), it's easiest to use Serial for logging, and Serial1 to talk to the XBee
+// If you're using an Uno (or similar), which only has one hardware serial port, it's best to use Serial for the XBee
+// and then SoftwareSerial (coupled to a USB-to-serial adapter) for logging
+
+// Serial port used to communicate with the XBee module
+#define XBEE  Serial1
+
+// Serial port used for logging
+#define LOG Serial
+//#include "SoftwareSerial.h"
+//SoftwareSerial gLogSerial(10, 11); // RX, TX
+//#define LOG gLogSerial
+
+#ifdef LOG
+#define P(X) LOG.print(X)
+#define PH(X) LOG.print(X, HEX)
+#else
+#define P(X)
+#define PH(X)
+#endif
+
+XBee gXBee = XBee();
+//Rx64Response gResponse = Rx64Response();
+Rx16Response gResponse = Rx16Response();
+
 Servo penservo; 
 
-const byte network = 212; // network group (can be in the range 1-255).
-const byte myNodeID = 3; // unique node ID of receiver (1 through 30)
-const byte freq = RF12_433MHZ; // Match freq to module
-const byte RF12_NORMAL_SENDWAIT = 0;
 
 const int payloadCount = 2; // the number of integers in the payload message
 int payload[payloadCount];
-int ledpin = 6; 
+int ledpin = 13; 
 int actuatorpin = 5; 
 
 int initialposition; 
@@ -37,7 +57,7 @@ void initialcycle(bool bshowactuate)
     for (int i = 0; i < 2; i++) {
         P("actuate "); 
         P(i); 
-        P("\n"); 
+        P("\r\n"); 
         for (int j = 50; j <= 200; j++) {
             if (bshowactuate)
                 penservo.write(map(j, 50, 200, servolo, servohi)); 
@@ -57,8 +77,14 @@ void initialcycle(bool bshowactuate)
 
 void setup() 
 {
-    Serial.begin(9600);
-    rf12_initialize(myNodeID, freq, network); // Initialize RFM12
+    XBEE.begin(9600);
+    // Tell XBee to use Hardware Serial. It's also possible to use SoftwareSerial
+    gXBee.setSerial(XBEE);
+
+#ifdef LOG
+    LOG.begin(9600);
+#endif
+    P("Let's go!\r\n");
     pinMode(ledpin, OUTPUT); 
     penservo.attach(actuatorpin); 
     
@@ -73,42 +99,86 @@ long livecount = 1000;
 int ledtoggle; 
 void loop() 
 {
-    if (rf12_recvDone() && (rf12_crc == 0) && ((rf12_hdr & RF12_HDR_CTL) == 0)) {
-        int *payload = (int*)rf12_data; // access rf12 data buffer as an arrya of ints
+    gXBee.readPacket();
+    
+    if (gXBee.getResponse().isAvailable()) 
+    {
+        // got something      
+        //if (gXBee.getResponse().getApiId() == RX_64_RESPONSE) 
+        if (gXBee.getResponse().getApiId() == RX_16_RESPONSE) 
+        {
+            // got a rx packet
+            //gXBee.getResponse().getRx64Response(gResponse);
+            gXBee.getResponse().getRx16Response(gResponse);
+            //option = gResponse.getOption();
+            //data = gResponse.getData(0);
+            // reset zero position 
+            // (could use this to set the top and bottom range from a distance)
+            P("len: ");
+            int len = gResponse.getDataLength();
+            P(len);
+            P("\r\n");
+            uint8_t* b = gResponse.getData();
+            int* payload = (int*)&b[15];
+            for (int i =0; i < len; i++)
+            {
+              if (b[i] < 0x10)
+                P("0");
+              PH(b[i]);
+              P(" ");
+            }
+            if (payload[1] == -998) 
+            {
+                initialcycle(true); 
+            }
+            else if (payload[1] == -999) 
+            {
+                initialcycle(false); 
+            }
+    
+            zpos = payload[0]; 
+            if (!binitialpositionset) {
+                initialposition = zpos; 
+                zlo = initialposition - 100; 
+                zhi = initialposition + 100; 
+                binitialpositionset = true; 
+            }
+            
+            digitalWrite(ledpin, ((++ledtoggle) % 2 ? HIGH : LOW)); 
+            int servopos = map(constrain(zpos, zlo, zhi), zlo, zhi, servolo, servohi); 
+            penservo.write(servopos); 
 
-        // reset zero position 
-        // (could use this to set the top and bottom range from a distance)
-        if (payload[1] == -998) 
-            initialcycle(true); 
-        else if (payload[1] == -999) 
-            initialcycle(false); 
-
-        zpos = payload[0]; 
-        if (!binitialpositionset) {
-            initialposition = zpos; 
-            zlo = initialposition - 100; 
-            zhi = initialposition + 100; 
-            binitialpositionset = true; 
+#if 1
+            P(zpos);
+            P(" ");
+            P(payload[1]); 
+            P(" ");
+            P(servopos); 
+#endif
+            P("\r\n");
+            livecount = 200000; 
         }
-        
-        digitalWrite(ledpin, ((++ledtoggle) % 2 ? HIGH : LOW)); 
-        int servopos = map(constrain(zpos, zlo, zhi), zlo, zhi, servolo, servohi); 
-        penservo.write(servopos); 
- 
-        P(zpos);
-        P(" ");
-        P(payload[1]); 
-        P(" ");
-        P(servopos); 
-        P("\n");
-        livecount = 200000; 
-    } else {
-        if (--livecount == 0) {
+        else
+        {
+          P(gXBee.getResponse().getApiId());
+          P(" Confused.\r\n");
+        }
+    } 
+    else if (gXBee.getResponse().isError()) 
+    {
+        P("Error reading packet.  Error code: ");  
+        P(gXBee.getResponse().getErrorCode());
+        P("\r\n");
+    }
+    else
+    {
+        if (--livecount == 0) 
+        {
             digitalWrite(ledpin, (ledtoggle % 2 ? LOW : HIGH)); 
             delay(100); 
             digitalWrite(ledpin, (ledtoggle % 2 ? HIGH : LOW)); 
             livecount = 200000; 
-            P("overflow livecount\n"); 
+            P("overflow livecount\r\n"); 
         }
     }
 }

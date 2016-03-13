@@ -4,28 +4,64 @@
 // integrates the position from the step and direction and 
 // sends the word in the payload out to the RF
 
-#include <JeeLib.h>
+#include <XBee.h>
 
-#define P(X) Serial.print(X)
-#define PH(X) Serial.print(X, HEX)
+// Which Polargraph are we?
+//#define TOSCA
+#define KNUT
 
-const byte network = 212; // network group (can be in the range 1-255).
-const byte myNodeID = 3; // unique node ID of receiver (1 through 30)
-const byte freq = RF12_433MHZ; // Match freq to module
-const byte RF12_NORMAL_SENDWAIT = 0;
+// If you're using a Mega, you can use different hardware serial ports for both the XBee and the logging.
+// In that case (unless you're using an XBee shield), it's easiest to use Serial for logging, and Serial1 to talk to the XBee
+// If you're using an Uno (or similar), which only has one hardware serial port, it's best to use Serial for the XBee
+// and then SoftwareSerial (coupled to a USB-to-serial adapter) for logging
+
+// Serial port used to communicate with the XBee module
+#define XBEE  Serial
+
+// Serial port used for logging
+//#define LOG Serial
+#include "SoftwareSerial.h"
+SoftwareSerial gLogSerial(10, 11); // RX, TX
+#define LOG gLogSerial
+
+#ifdef LOG
+#define P(X) LOG.print(X)
+#define PH(X) LOG.print(X, HEX)
+#else
+#define P(X)
+#define PH(X)
+#endif
 
 int ledpin = 6; 
 const int payloadCount = 2; // the number of integers in the payload message
 int payload[payloadCount];
 int pinstep = 3; // irq1
 int pindirection = 5;   // check PIND value below
+
+// Comms details
+XBee gXBee = XBee();
+#ifdef TOSCA
+// Specify the address of the remote XBee (this is the SH + SL)
+XBeeAddress64 gActuatorAddr64 = XBeeAddress64(0x0013a200, 0x4000f394);
+#else // KNUT
+// Specify the address of the remote XBee (this is the SH + SL)
+XBeeAddress64 gActuatorAddr64 = XBeeAddress64(0x0013a200, 0x4000f965);
+#endif
+
 void setup() 
 {
-    Serial.begin(9600);
+    XBEE.begin(9600);
+    // Tell XBee to use Hardware Serial. It's also possible to use SoftwareSerial
+    gXBee.setSerial(XBEE);
+
+#ifdef LOG
+    LOG.begin(9600);
+#endif
+    P("Hello world\r\n");
     pinMode(pinstep, INPUT); 
     pinMode(pindirection, INPUT); 
     attachInterrupt(1, incz, RISING);
-    rf12_initialize(myNodeID, freq, network); // Initialize RFM12
+    P("Let's go!\r\n");
     pinMode(ledpin, OUTPUT); 
 }
 
@@ -42,25 +78,31 @@ int prevzpos;
 int ncount = 0; 
 long npingcount = 1000; 
 int ledtoggle; 
+
 void loop() 
 {
-    if ((zpos != prevzpos) || (--npingcount == 0)) {
-        while (!rf12_canSend()) 
-            rf12_recvDone(); // no, so service the driver
+    if ((zpos != prevzpos) || (--npingcount == 0)) 
+    {
         prevzpos = zpos; 
         payload[0] = prevzpos; 
         payload[1] = ncount++; 
 
         // special cases
         if ((payload[1] == 999) || (payload[1] == -998))
+        {
             payload[1] = 0; 
-           
-        rf12_sendStart(1, payload, payloadCount*sizeof(int));
-        rf12_sendWait(RF12_NORMAL_SENDWAIT); // wait for send completion
+        }
+        
+        // Create a TX Request...
+        //ZBTxRequest zbTx = ZBTxRequest(gActuatorAddr64, (uint8_t*)payload, sizeof(payload));
+        Tx64Request tx = Tx64Request(gActuatorAddr64, (uint8_t*)payload, sizeof(payload));
+        // ...and send it
+        gXBee.send(tx);
+
         npingcount = 100000;
         P("Z"); 
         P(prevzpos); 
-        P("\n"); 
+        P("\r\n"); 
         digitalWrite(ledpin, ((++ledtoggle) % 2 ? HIGH : LOW));         
         delay(50);
     }
