@@ -7,6 +7,7 @@ As part of the [Phrased & Confused](http://www.phrasedandconfused.co.uk/) at [Li
 ## Reference Links
 
  * [Machinekit](http://www.machinekit.io/) - the operating system to control the CNC motors.
+ * [Gcode generation](https://github.com/DoESLiverpool/Tosca/blob/master/GcodeFiles.md)
 
 ## Name
 
