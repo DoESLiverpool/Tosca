@@ -14,12 +14,12 @@
 // and then SoftwareSerial (coupled to a USB-to-serial adapter) for logging
 
 // Serial port used to communicate with the XBee module
-#define XBEE  Serial1
+#define XBEE  Serial
 
 // Serial port used for logging
-#define LOG Serial
+//#define LOG Serial
 //#include "SoftwareSerial.h"
-//SoftwareSerial gLogSerial(10, 11); // RX, TX
+//SoftwareSerial gLogSerial(6, 7); // RX, TX
 //#define LOG gLogSerial
 
 #ifdef LOG
@@ -45,11 +45,11 @@ int actuatorpin = 5;
 int initialposition; 
 bool binitialpositionset = false; 
 
-long servolo = 30; 
-long servohi = 120; 
+long servolo = 20; 
+long servohi = 160; 
 
 long zlo = -100; 
-long zhi = 100; 
+long zhi = 10; 
 
 void initialcycle(bool bshowactuate) 
 {
