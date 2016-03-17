@@ -3,6 +3,28 @@
 Either fight it out with Inkscape, or use:
 **http://doesliverpool.github.io/svgraph.html**
 
+## Resizing for the playing area instructions
+1. The width needs to be put into the machinekit/tosca.hal file (find it and change it on the BB)
+1. Home point origin (where you start from) is width\*0.5 down from the top left pulley, and then across by width\*0.5
+1. Edit twistcodewiki/cgipipe/xylimits
+
+## Poetry instructions
+1. Log on to BB, go into "twistcodewiki" directory and run the script "pytwister".  This makes a webserver that listens on port 9003.
+1. SSH Log on to BB again in another window, but with -X setting: cd machinekit \n . scripts/rip-environment \n machinekit tosca.ini
+1. This calls up the axisUI controlling the maching.  Move to home position, click [home], load /home/machinekit/poetrygcode.ngc
+1. Go to http://doesliverpool.github.io/svgraph.html, fill in the IP number into the box, hit return and it goes green
+1. Type your poetry into "svgizing letters here" box, click [svgizetext].  This will relay the poetry directly to the BB which will gcode it in space available
+1. Click "reload" icon on axisUI and now click on run icon
+1. Last 3 steps will happen from a POST command to http://192.168.7.2:9003/cgipipe/genpoetry.py?centre=no' where the POST data is the ascii text of the poem with '\n' linefeeds.
+1. This enables the 3-click poem of "export from Csharp", "reload in axisUI", "run in axisUI"
+
+## Toxteth map instructions
+1. SSH log on to BB with -X setting. and boot up axisUI
+1. The files to plot will be in ../performancegcodes/*.ngc numbered in order
+1. I will help lay out the map and the icons onto the map (position and scaling) using svgraph.html technology on Friday morning
+
+
+
 ## Basic Instructions
 
 1. Works best in CHROME browser.
