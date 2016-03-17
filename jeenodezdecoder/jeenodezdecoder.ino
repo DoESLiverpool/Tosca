@@ -7,8 +7,8 @@
 #include <XBee.h>
 
 // Which Polargraph are we?
-//#define TOSCA
-#define KNUT
+#define TOSCA
+//#define KNUT
 
 // If you're using a Mega, you can use different hardware serial ports for both the XBee and the logging.
 // In that case (unless you're using an XBee shield), it's easiest to use Serial for logging, and Serial1 to talk to the XBee
@@ -42,10 +42,10 @@ int pindirection = 5;   // check PIND value below
 XBee gXBee = XBee();
 #ifdef TOSCA
 // Specify the address of the remote XBee (this is the SH + SL)
-XBeeAddress64 gActuatorAddr64 = XBeeAddress64(0x0013a200, 0x4000f394);
+XBeeAddress64 gActuatorAddr64 = XBeeAddress64(0x0013a200, 0x40d9d49f);
 #else // KNUT
 // Specify the address of the remote XBee (this is the SH + SL)
-XBeeAddress64 gActuatorAddr64 = XBeeAddress64(0x0013a200, 0x4000f965);
+XBeeAddress64 gActuatorAddr64 = XBeeAddress64(0x0013a200, 0x40d9d5cf);
 #endif
 
 void setup() 
