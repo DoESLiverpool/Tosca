@@ -36,6 +36,13 @@ Rx16Response gResponse = Rx16Response();
 
 Servo penservo; 
 
+// Which Polargraph are we?
+#define TOSCA
+//#define KNUT
+
+const uint32_t kToscaAddr = 0x40d9d49f;
+const uint32_t kKnutAddr = 0x40d9d5cf;
+
 
 const int payloadCount = 2; // the number of integers in the payload message
 int payload[payloadCount];
@@ -92,6 +99,12 @@ void setup()
     initialcycle(true); 
 }
 
+#define htonl(x) ( ((x)<<24 & 0xFF000000UL) | \
+                   ((x)<< 8 & 0x00FF0000UL) | \
+                   ((x)>> 8 & 0x0000FF00UL) | \
+                   ((x)>>24 & 0x000000FFUL) )
+#define ntohl(x) htonl(x)
+
 long zpos = 0; 
 long prevzpos; 
 int ncount = 0; 
@@ -105,11 +118,11 @@ void loop()
     {
         // got something      
         //if (gXBee.getResponse().getApiId() == RX_64_RESPONSE) 
-        if (gXBee.getResponse().getApiId() == RX_16_RESPONSE) 
+        if (gXBee.getResponse().getApiId() == 0) //RX_16_RESPONSE) 
         {
             // got a rx packet
-            //gXBee.getResponse().getRx64Response(gResponse);
-            gXBee.getResponse().getRx16Response(gResponse);
+            gXBee.getResponse().getRx64Response(gResponse);
+            //gXBee.getResponse().getRx16Response(gResponse);
             //option = gResponse.getOption();
             //data = gResponse.getData(0);
             // reset zero position 
@@ -119,7 +132,19 @@ void loop()
             P(len);
             P("\r\n");
             uint8_t* b = gResponse.getData();
-            int* payload = (int*)&b[15];
+            uint32_t* address = (uint32_t*)&b[1];
+            int* payload = (int*)&b[6];
+            int servopos;
+#if 1
+// Lots of logging
+            if (ntohl(*address) == kToscaAddr)
+            {
+              P("Tosca packet => ");
+            }
+            if (ntohl(*address) == kKnutAddr)
+            {
+              P("Knut packet => ");
+            }
             for (int i =0; i < len; i++)
             {
               if (b[i] < 0x10)
@@ -127,36 +152,45 @@ void loop()
               PH(b[i]);
               P(" ");
             }
-            if (payload[1] == -998) 
+#endif
+#ifdef TOSCA
+            if (ntohl(*address) == kToscaAddr)
+#else
+            if (ntohl(*address) == kKnutAddr)
+#endif
             {
-                initialcycle(true); 
+              if (payload[1] == -998) 
+              {
+                  initialcycle(true); 
+              }
+              else if (payload[1] == -999) 
+              {
+                  initialcycle(false); 
+              }
+      
+              zpos = payload[0]; 
+              if (!binitialpositionset) {
+                  initialposition = zpos; 
+                  zlo = initialposition - 100; 
+                  zhi = initialposition + 100; 
+                  binitialpositionset = true; 
+              }
+              
+              digitalWrite(ledpin, ((++ledtoggle) % 2 ? HIGH : LOW)); 
+              servopos = map(constrain(zpos, zlo, zhi), zlo, zhi, servolo, servohi); 
+              penservo.write(servopos); 
+              livecount = 200000; 
             }
-            else if (payload[1] == -999) 
-            {
-                initialcycle(false); 
-            }
-    
-            zpos = payload[0]; 
-            if (!binitialpositionset) {
-                initialposition = zpos; 
-                zlo = initialposition - 100; 
-                zhi = initialposition + 100; 
-                binitialpositionset = true; 
-            }
-            
-            digitalWrite(ledpin, ((++ledtoggle) % 2 ? HIGH : LOW)); 
-            int servopos = map(constrain(zpos, zlo, zhi), zlo, zhi, servolo, servohi); 
-            penservo.write(servopos); 
 
 #if 1
+            P(" Z: ");
             P(zpos);
-            P(" ");
+            P(" Count: ");
             P(payload[1]); 
-            P(" ");
+            P(" Servo: ");
             P(servopos); 
-#endif
             P("\r\n");
-            livecount = 200000; 
+#endif
         }
         else
         {
