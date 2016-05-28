@@ -16,7 +16,9 @@ This assumes you've already got a Beaglebone with Machinekit installed, but can 
 1. Run the machinekit software.  This will spawn a new window on your laptop, which is actually running on the Beaglebone and just using your laptop as a display.
   ```
   cd machinekit
+  
   . scripts/rip-environment
+  
   machinekit mk7_bbb_pcb.ini
   ```
 1. Home the machine by using left right up down cursor keys to put the pen in the middle of the board with both strings at right angles to each other.  Click on "home all"
