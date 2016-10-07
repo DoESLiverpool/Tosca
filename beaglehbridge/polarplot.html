@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Polar plot interface</title>
+<script type="text/javascript" src="raphael.js"></script>    
+<script>
+    
+var poketiming = 500; 
+var portnumber = 9019; 
+var maxxydiff = 4000; 
+
+var paper1, Drect1, curcircle, dragcircle; 
+var scriptEl = null; 
+var x0 = null, y0 = null; 
+
+function init()
+{
+    paper1 = Raphael("paper1", 1300, 800);
+    Drect1 = paper1.path("M20,30 L100,122 L40, 100 Z").attr({fill: "orange"});
+    dragcircle = paper1.circle(paper1.width*0.5, paper1.height*0.5, 10).attr({fill:"yellow"}); 
+    curcircle = paper1.circle(paper1.width*0.5, paper1.height*0.5, 5).attr({fill:"red"}); 
+    
+    var dx0 = 0, dy0 = 0; 
+    dragcircle.drag(function(dx, dy, x, y) { dragcircle.attr({cx:dx0+dx, cy:dy0+dy}); }, 
+                    function(x, y) { dx0 = dragcircle.attr("cx");  dy0 = dragcircle.attr("cy"); }); 
+    pokepolarloop(); 
+}
+
+window.pos = function(x, y, i) 
+{
+    document.getElementById("cc").textContent = "dutyloop:"+i; 
+    if (y0 === null) {
+        x0 = x; 
+        y0 = y; 
+        dragcircle.attr({cx:paper1.width/2, cy:paper1.height/2}); 
+    }
+    console.log(x, y, i); 
+    if (scriptEl != null) {
+        scriptEl.remove(); 
+        scriptEl = null; 
+    }
+    var cx = ((x-x0)/maxxydiff*0.5 + 0.5)*paper1.width; 
+    var cy = ((y-y0)/maxxydiff*0.5 + 0.5)*paper1.height; 
+    curcircle.animate({cx:cx, cy:cy}, poketiming); 
+};
+
+
+var scriptcount = 0
+function pokepolar(x, y)
+{
+    scriptcount += 1; 
+    scriptEl = document.createElement('script'); 
+    var sxy = (y !== undefined ? ("x"+x.toFixed(0)+"y"+y.toFixed(0)) : ""); 
+    scriptEl.setAttribute('src', 'http://'+window.location.hostname+':'+portnumber+'/'+sxy+'c'+scriptcount);
+    document.body.appendChild(scriptEl);  
+}
+
+var lastcx = null, lastcy = null; 
+function pokepolarloop()
+{
+    if (scriptEl == null) {
+        var cx = dragcircle.attr("cx"); 
+        var cy = dragcircle.attr("cy"); 
+        if ((y0 != null) && ((cx != lastcx) || (cy != lastcy))) {
+            var ddx = (y0 === null ? undefined : (cx/paper1.width - 0.5)*2*maxxydiff + x0); 
+            var ddy = (y0 === null ? undefined : (cy/paper1.height - 0.5)*2*maxxydiff + y0); 
+            pokepolar(ddx, ddy); 
+            lastcx = cx; 
+            lastcy = cy; 
+        } else {
+            pokepolar(undefined, undefined); 
+        }
+    }
+    setTimeout(pokepolarloop, poketiming); 
+}
+
+document.addEventListener('DOMContentLoaded', init); 
+</script>
+<style>
+#paper1 { border: thin black solid; }
+</style>
+</head>
+
+<body>
+<h3>Polarplot  <span id="cc"></span></span></h3>
+<div id="paper1"></div>
+</body>
+</html>
