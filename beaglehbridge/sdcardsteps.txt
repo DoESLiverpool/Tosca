@@ -1,0 +1,59 @@
+* Download from https://beagleboard.org/latest-images
+
+* unxz bone-debian-8.4-lxqt-4gb-armhf-2016-05-13-4gb.img.xz
+
+* fdisk -l 
+lists the sd card and partitions
+
+* umount /dev/mmcblk0p1
+unmount the file systems
+
+* sudo dd if=bone-debian-8.4-lxqt-4gb-armhf-2016-05-13-4gb.img of=/dev/mmcblk0 bs=4M conv=fsync
+copy the image onto the disk
+
+
+-------
+
+Logon with debian:temppwd
+
+Update python3 to for async and websockets technology
+
+apt-get update
+
+apt-get install python3-pip
+
+pip3 install asyncio
+
+pip3 install websockets
+
+
+-------
+
+Enable cape manager capability
+
+zcat /proc/config.gz | grep CONFIG_BONE_CAPEMGR
+>>> CONFIG_BONE_CAPEMGR=y
+
+dtc --version
+>>> Version: DTC 1.4.1...
+
+Then get the git repo:
+
+git clone https://github.com/beagleboard/bb.org-overlays.git
+cd bb.org-overlays
+./install.sh
+
+Find out the os:
+lsb_release -a
+>>> jessie 8.4
+
+
+help loop at:
+https://github.com/beagleboard/bb.org-overlays/issues/25
+
+pip3 install Adafruit_BBIO
+
+cd /var/lib/cloud9/static
+curl https://raw.githubusercontent.com/DmitryBaranovskiy/raphael/master/raphael.js > raphael.js
+
+also put polarplot.html there

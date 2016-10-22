@@ -2,87 +2,84 @@
 <html>
 <head>
 <title>Polar plot interface</title>
-<script type="text/javascript" src="raphael.js"></script>    
+<script type="text/javascript" src="raphael.js"></script>
+<style>
+#paper1 { width:800px; height:400px; background-color:#edf; margin:auto;}
+#pcontainer { border: thin black solid; display: inline-block;}
+</style>
 <script>
-    
-var poketiming = 500; 
-var portnumber = 9019; 
+var ipaddress = "192.168.0.67"; 
+
+var ws = new WebSocket("ws://"+ipaddress+":5678/");
+
 var maxxydiff = 4000; 
 
 var paper1, Drect1, curcircle, dragcircle; 
 var scriptEl = null; 
-var x0 = null, y0 = null; 
+var x0 = 0; 
+var y0 = 0; 
+
+function wssendxypos(cx, cy) 
+{
+    var ddx = (cx/paper1.width - 0.5)*2*maxxydiff + x0; 
+    var ddy = (cy/paper1.height - 0.5)*2*maxxydiff + y0; 
+    ws.send("pt X"+ddx.toFixed()+"Y"+ddy.toFixed()+"\n"); 
+}
 
 function init()
 {
-    paper1 = Raphael("paper1", 1300, 800);
+    var width = document.getElementById("paper1").offsetWidth; 
+    var height = document.getElementById("paper1").offsetWidth; 
+    paper1 = Raphael("paper1");
     Drect1 = paper1.path("M20,30 L100,122 L40, 100 Z").attr({fill: "orange"});
     dragcircle = paper1.circle(paper1.width*0.5, paper1.height*0.5, 10).attr({fill:"yellow"}); 
     curcircle = paper1.circle(paper1.width*0.5, paper1.height*0.5, 5).attr({fill:"red"}); 
     
     var dx0 = 0, dy0 = 0; 
-    dragcircle.drag(function(dx, dy, x, y) { dragcircle.attr({cx:dx0+dx, cy:dy0+dy}); }, 
-                    function(x, y) { dx0 = dragcircle.attr("cx");  dy0 = dragcircle.attr("cy"); }); 
-    pokepolarloop(); 
+    dragcircle.drag(function(dx, dy, x, y) { 
+                        dragcircle.attr({cx:dx0+dx, cy:dy0+dy}); 
+                    }, function(x, y) { 
+                        dragcircle.attr("fill", "orange"); 
+                        dx0 = dragcircle.attr("cx");  
+                        dy0 = dragcircle.attr("cy"); 
+                    }, function() {
+                        dragcircle.attr("fill", "yellow");
+                        wssendxypos(dragcircle.attr("cx"), dragcircle.attr("cy")); 
+                    }); 
 }
 
-window.pos = function(x, y, i) 
+ws.onmessage = function (event) 
 {
-    document.getElementById("cc").textContent = "dutyloop:"+i; 
-    if (y0 === null) {
-        x0 = x; 
-        y0 = y; 
-        dragcircle.attr({cx:paper1.width/2, cy:paper1.height/2}); 
+    var s = event.data.search(" "); 
+    var comm = event.data.substr(0, s); 
+    var sval = event.data.substr(s+1); 
+    if ((comm == "cpt") || (comm == "start")) {
+        var mws = (/X([\-\d\.]+)Y([\-\d\.]+)/g).exec(sval); 
+        var x = parseFloat(mws[1]); 
+        var y = parseFloat(mws[2]); 
+        if (comm == "start") {
+            x0 = x; 
+            y0 = y;
+            console.log(comm, sval, x0, y0); 
+        }
+        var cx = ((x-x0)/maxxydiff*0.5 + 0.5)*paper1.width; 
+        var cy = ((y-y0)/maxxydiff*0.5 + 0.5)*paper1.height; 
+        curcircle.attr({cx:cx, cy:cy}); 
+    } else {
+        console.log(event.data); 
     }
-    console.log(x, y, i); 
-    if (scriptEl != null) {
-        scriptEl.remove(); 
-        scriptEl = null; 
-    }
-    var cx = ((x-x0)/maxxydiff*0.5 + 0.5)*paper1.width; 
-    var cy = ((y-y0)/maxxydiff*0.5 + 0.5)*paper1.height; 
-    curcircle.animate({cx:cx, cy:cy}, poketiming); 
 };
 
 
-var scriptcount = 0
-function pokepolar(x, y)
-{
-    scriptcount += 1; 
-    scriptEl = document.createElement('script'); 
-    var sxy = (y !== undefined ? ("x"+x.toFixed(0)+"y"+y.toFixed(0)) : ""); 
-    scriptEl.setAttribute('src', 'http://'+window.location.hostname+':'+portnumber+'/'+sxy+'c'+scriptcount);
-    document.body.appendChild(scriptEl);  
-}
-
-var lastcx = null, lastcy = null; 
-function pokepolarloop()
-{
-    if (scriptEl == null) {
-        var cx = dragcircle.attr("cx"); 
-        var cy = dragcircle.attr("cy"); 
-        if ((y0 != null) && ((cx != lastcx) || (cy != lastcy))) {
-            var ddx = (y0 === null ? undefined : (cx/paper1.width - 0.5)*2*maxxydiff + x0); 
-            var ddy = (y0 === null ? undefined : (cy/paper1.height - 0.5)*2*maxxydiff + y0); 
-            pokepolar(ddx, ddy); 
-            lastcx = cx; 
-            lastcy = cy; 
-        } else {
-            pokepolar(undefined, undefined); 
-        }
-    }
-    setTimeout(pokepolarloop, poketiming); 
-}
-
 document.addEventListener('DOMContentLoaded', init); 
 </script>
-<style>
-#paper1 { border: thin black solid; }
-</style>
 </head>
 
 <body>
+<div id="pcontainer">
+  <div id="paper1"></div>
+</div>
 <h3>Polarplot  <span id="cc"></span></span></h3>
-<div id="paper1"></div>
 </body>
 </html>
+
