@@ -13,6 +13,10 @@ copy the image onto the disk
 
 
 -------
+running python
+/usr/local/opt/python-3.4.5/bin/python3.4
+
+-------
 
 Logon with debian:temppwd
 
@@ -57,3 +61,54 @@ cd /var/lib/cloud9/static
 curl https://raw.githubusercontent.com/DmitryBaranovskiy/raphael/master/raphael.js > raphael.js
 
 also put polarplot.html there
+
+
+
+
+============
+* get 'Wheezy for BeagleBone via microSD card' image from: https://beagleboard.org/latest-images
+Its the 7.11 2015-06-15 one.
+
+* unxz bone-debian-7.11-lxde-4gb-armhf-2016-06-15-4gb.img.xz
+
+* sudo fdisk -l
+lists the sd card and partitions
+
+* umount /dev/mmcblk0p1
+unmount the file systems
+
+* sudo dd if=bone-debian-7.11-lxde-4gb-armhf-2016-06-15-4gb.img.xz of=/dev/mmcblk0 bs=4M conv=fsync
+copy the image onto the disk
+
+
+
+set the time and date or the compiler complains:
+
+date --set "hh:mm mm/dd/yy"
+
+i had to mess around setting the locale for a while, but i'm not sure what actually got it going!
+if you type
+locale
+
+it will complain about not finding some files and then give a list of variables with two missing
+
+I think typing
+
+export LC_ALL="en_US.UTF-8"
+export LANGUAGE="en_US.UTF-8"
+
+should do it, but i also tried putting them into /etc/environment and /etc/default/locale
+and ran
+sudo dpkg-reconfigure locales
+
+i ended up somehow changing it all to GB but it might be easier to use US as most of the varibles are already set to it
+i got info from: http://askubuntu.com/questions/162391/how-do-i-fix-my-locale-issue/790373#790373
+you might need to log out and in again (but if you shutdown the bb, don't forget to set the date again). It's probably a lot easier than i made it.
+
+I think when you enter
+locale
+and all the variables are set its ready.
+
+
+
+http://askubuntu.com/questions/162391/how-do-i-fix-my-locale-issue/790373#790373
