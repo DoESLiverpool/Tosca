@@ -13,4 +13,8 @@ As part of the [Phrased & Confused](http://www.phrasedandconfused.co.uk/) at [Li
 
 Named after the mother of Knut, the famous *polar* bear from Berlin Zoo.
 
+## Updates
+
+System now does not use machinekit and is now able to run PWM-H-bridge servos and quadrature decodes directly from the board.  Instructions now are at: https://github.com/DoESLiverpool/wiki/wiki/PolarGraph
+
 
